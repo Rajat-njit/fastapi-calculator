@@ -1,5 +1,6 @@
-fastapi==0.111.0
+fastapi==0.115.4
 uvicorn[standard]==0.27.0.post1
+starlette==0.40.0
 
 # Database + ORM
 SQLAlchemy==2.0.29
