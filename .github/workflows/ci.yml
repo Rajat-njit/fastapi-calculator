@@ -95,6 +95,6 @@ jobs:
         with:
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/fastapi-calculator:latest
-            ${{ secrets.DOCKER_USERNAME }}/fastapi-calculator:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/fastapi-calculator:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/fastapi-calculator:${{ github.sha }}
           platforms: linux/amd64,linux/arm64
