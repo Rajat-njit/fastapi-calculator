@@ -14,10 +14,8 @@ User SQLAlchemy model with:
 import uuid
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any
-
+from app.models.calculation import GUID
 from sqlalchemy import Column, String, Boolean, DateTime, or_
-import uuid
-from sqlalchemy import String
 from sqlalchemy.orm import relationship, Session
 
 from app.database import Base
@@ -32,29 +30,23 @@ def utcnow() -> datetime:
 class User(Base):
     __tablename__ = "users"
 
-    # Primary key
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
 
-    # Identity fields
     username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String, unique=True, nullable=False, index=True)
     password = Column(String, nullable=False)
 
-    # Profile fields
     first_name = Column(String(50), nullable=False)
     last_name = Column(String(50), nullable=False)
 
-    # Status flags
     is_active = Column(Boolean, default=True, nullable=False)
     is_verified = Column(Boolean, default=False, nullable=False)
 
-    # Timestamps
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
-    last_login = Column(DateTime(timezone=True), nullable=True)
 
-    # Relationships
     calculations = relationship("Calculation", back_populates="user", cascade="all, delete-orphan")
+
 
     # ---------------- Password helpers ----------------
 

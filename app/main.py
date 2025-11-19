@@ -16,10 +16,17 @@ from app.api.routes.calculations import router as calc_router
 # ------------------------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+
+    # ⭐ IMPORTANT: import all models BEFORE create_all
+    import app.models.user
+    import app.models.calculation
+
     print("Creating tables...")
     Base.metadata.create_all(bind=engine)
     print("Tables created successfully!")
+
     yield
+
 
 
 # ------------------------------------------------------------------------------
