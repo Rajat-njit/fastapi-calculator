@@ -1,86 +1,53 @@
-# **FastAPI Calculator — Full Backend Project (Auth + Polymorphic Calculations + CI/CD + Docker)**
+## 🚀 FastAPI Calculator — Full Backend Project (Auth + Polymorphic Calculations + CI/CD + Docker)
 
-## **1. Overview**
+### **1. Overview**
 
-This project implements a complete backend application built with **FastAPI**, featuring secure user authentication, polymorphic calculation models, relational database persistence, automated testing, and a full CI/CD pipeline with Docker integration.
-It was developed as part of a backend engineering module, with an emphasis on **professional engineering practices**, including clean API design, declarative SQLAlchemy models, Pydantic validation, token-based security, and an industry-style GitHub Actions pipeline.
+This project implements a complete backend application using **FastAPI**, emphasizing **professional engineering practices**. Key features include secure user authentication, polymorphic calculation models, relational database persistence (PostgreSQL/SQLAlchemy), automated testing, and a full CI/CD pipeline with Docker integration.
 
-The application exposes REST endpoints for:
+The design focuses on: clean API structure, declarative SQLAlchemy models, Pydantic validation, token-based security, and an industry-style GitHub Actions pipeline.
 
-* **User Registration**
-* **User Login (JWT-based authentication)**
-* **CRUD operations for Calculations**
-* **Polymorphic calculation logic implemented via subclasses + factory pattern**
-* **Automated DB migrations (create_all)**
-* **Fully containerized deployment using Docker & docker-compose**
-* **Automated test suite (unit, integration, e2e)**
+#### **Core Features**
 
-This README explains each part in detail—its architecture, design decisions, workflows, and testing strategy—so that the project can be evaluated in depth.
+  * **User Management:** Registration and Login (JWT-based authentication).
+  * **Calculations:** Full CRUD operations.
+  * **Polymorphism:** Logic implemented via **subclasses** and the **Factory Pattern**.
+  * **Database:** Relational persistence with automated DB migrations (`create_all`).
+  * **Deployment:** Fully containerized using **Docker** & `docker-compose`.
+  * **Testing:** Automated suite covering **Unit**, **Integration**, and **E2E** tests.
 
----
+-----
 
-# **2. Project Architecture**
+### **2. Project Architecture**
 
-The internal structure follows the professional FastAPI layout recommended by industry standards:
+The internal structure follows a professional, scalable FastAPI layout, promoting **high cohesion** and **low coupling**.
 
 ```
 app/
- ├── api/
- │   ├── routes/          # All API routers (auth, calculations)
- │   └── dependencies/    # Authentication & DB dependencies
- ├── core/                # Security, settings, JWT, password hashing
- ├── models/              # SQLAlchemy ORM models (User, Calculation + subclasses)
- ├── schemas/             # Pydantic schemas for request/response validation
- ├── database.py          # Engine, SessionLocal, Base Config
- ├── main.py              # FastAPI app instance, router mounting, lifespan
+ ├── api/
+ │   ├── routes/          # All API routers (auth, calculations)
+ │   └── dependencies/    # Authentication & DB dependencies
+ ├── core/                # Security, settings, JWT, password hashing
+ ├── models/              # SQLAlchemy ORM models (User, Calculation + subclasses)
+ ├── schemas/             # Pydantic schemas for request/response validation
+ ├── database.py          # Engine, SessionLocal, Base Config
+ ├── main.py              # FastAPI app instance, router mounting, lifespan
 tests/
- ├── unit/
- ├── integration/
- └── e2e/
+ ├── unit/
+ ├── integration/
+ └── e2e/
 ```
 
-### **2.1 Why this architecture?**
+#### **Design Rationale**
 
-This structure ensures:
+This structure ensures **testability** (clean dependency overrides), **scalability** (easy integration of new modules), and **professional readability**, aligning with industry expectations.
 
-* **High cohesion, low coupling**
-  Each concern is isolated—auth, calculations, models, schemas.
-* **Testability**
-  Dependencies override cleanly, enabling isolated test environments.
-* **Scalability**
-  New modules (admin, logs, payments, etc.) can plug in easily.
-* **Professional readability**
-  Following professor’s expected structure and industry expectations.
+-----
 
----
+### **3. Getting Started**
 
-# 3️⃣ Environment Configuration (`.env`)
+#### **3.1 Requirements**
 
-Your application reads from `.env` via Pydantic Settings.
-This file is **critical for grading**, because the professor’s script expects environment-driven configuration.
-
-### Example `.env`
-
-```
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fastapi_db
-JWT_SECRET_KEY=super-secret-key
-JWT_REFRESH_SECRET_KEY=super-refresh-key
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-REFRESH_TOKEN_EXPIRE_DAYS=7
-BCRYPT_ROUNDS=12
-```
-
-🎯 **Why this matters**
-
-* Your CI pipeline overrides `DATABASE_URL`
-* Docker Compose injects environment variables
-* Your app boots through `get_settings()`
----
-
-# 1️⃣4️⃣ requirements.txt
-
-Ensure your repo includes:
+Ensure the following dependencies are installed (as per `requirements.txt`):
 
 ```
 fastapi
@@ -96,410 +63,223 @@ httpx
 python-multipart
 ```
 
----
-
-# 1️⃣2️⃣ Running the Project
-
-### Clone the repository
-
-```
-git clone https://github.com/<your-username>/fastapi-calculator.git
-cd fastapi-calculator
-```
-
-### Create virtual environment
-
-```
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### Run locally
-
-```
-uvicorn app.main:app --reload
-```
-
-
----
-# 4️⃣ Application Settings (`config.py`)
-
-Located in:
-
-```
-app/core/config.py
-```
-
-Uses `pydantic-settings`:
-
-```python
-class Settings(BaseSettings):
-    DATABASE_URL: str
-    JWT_SECRET_KEY: str
-    JWT_REFRESH_SECRET_KEY: str
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-```
-
-🎯 **Why this matters**
-
-* Completely decouples configuration from source code
-* Supports `.env`, GitHub Secrets, and Docker environment variables
-* Matches industry best practices
-
----
-
-# 5️⃣ Database Layer & Test Overrides (`conftest.py`)
-
-Your `conftest.py` is one of the most important files for grading.
-
-### ✔ Provides Postgres-based test DB in CI
-
-### ✔ Overrides `get_db()` during testing
-
-### ✔ Creates/drops tables per test session
-
-Example core snippet:
-
-```python
-from app.main import app
-from app.database import Base
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
-TestingSessionLocal = sessionmaker(bind=engine)
-
-@pytest.fixture()
-def client():
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
-
-    def override_get_db():
-        db = TestingSessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
-
-    app.dependency_overrides[get_db] = override_get_db
-    return TestClient(app)
-```
-
-🎯 Ensures:
-
-* Tests run in isolation
-* No accidental real DB writes
-* GitHub Actions uses Postgres 15 test instance
-
----
-
-# **3. Database Layer**
-
-The project uses **PostgreSQL** in production and CI environments.
-The ORM used is **SQLAlchemy 2.0-style with Declarative Base**.
-
-### Key decisions:
-
-### **3.1 UUID Primary Keys**
-
-Users and Calculations both use UUID-based identifiers:
-
-* **Users:** `String(36)` (UUID stored as string)
-* **Calculations:** Custom GUID TypeDecorator → stored as UUID in Postgres, BLOB in SQLite
-
-This ensures:
-
-* Predictability across Python, Postgres, and test environments
-* No collision issues
-* Clean foreign key relationships
-
-### **3.2 Calculation Polymorphism Table**
-
-All calculations—addition, subtraction, multiplication, division—are stored in a **single table** using SQLAlchemy polymorphic identity.
-
-This allows:
-
-* Easy filtering
-* Consistent schema
-* Child class behavior via overridden methods
-
----
-
-# **4. Authentication**
-
-The application uses **JWT-based authentication**, implementing:
-
-* `POST /auth/register`
-* `POST /auth/login`
-* Authorization via Bearer token in Swagger UI
-
-### **4.1 Password Hashing**
-
-Passwords use **bcrypt** via Passlib:
-
-```python
-def get_password_hash(password: str):
-    return pwd_context.hash(password)
-```
-
-### **4.2 Token Creation**
-
-The access token encodes the user ID:
-
-```python
-def create_access_token(data: dict):
-    return jwt.encode(
-        data | {"exp": expire},
-        settings.JWT_SECRET_KEY,
-        algorithm=settings.ALGORITHM
-    )
-```
-
-### **4.3 Getting Current User**
-
-The dependency reads the token, extracts the `sub`, validates UUID format, and fetches the user.
-
----
-
-# **5. Polymorphic Calculation Model**
-
-This was one of the most significant parts of the assignment and demonstrates advanced OOP + SQLAlchemy ORM usage.
-
-### **5.1 Factory Pattern**
-
-All calculations are created through a single entry point:
-
-```python
-calc = Calculation.create("multiplication", user_id, inputs)
-```
-
-The factory maps strings → subclasses:
-
-```python
-mapping = {
-    "addition": Addition,
-    "subtraction": Subtraction,
-    "multiplication": Multiplication,
-    "division": Division,
-}
-```
-
-### **5.2 Polymorphic Behavior**
-
-Each child class overrides `get_result()`:
-
-```python
-class Multiplication(Calculation):
-    __mapper_args__ = {"polymorphic_identity": "multiplication"}
-
-    def get_result(self):
-        result = 1
-        for v in self.inputs:
-            result *= v
-        return float(result)
-```
-
-### **5.3 Why polymorphism?**
-
-* Cleaner model behavior
-* Extensible (ex: SquareRoot, Power, StatisticsCalc)
-* Aligns perfectly with professor’s expected complexity
-* Fully testable and supports future assignment phases
-
----
-
-# **6. API Endpoints**
-
-### **6.1 Auth**
-
-| Endpoint         | Method | Description   |
-| ---------------- | ------ | ------------- |
-| `/auth/register` | POST   | Create a user |
-| `/auth/login`    | POST   | Get JWT token |
-
-### **6.2 Calculations**
-
-All calculation endpoints require authentication:
-
-| Endpoint             | Method | Description                      |
-| -------------------- | ------ | -------------------------------- |
-| `/calculations`      | POST   | Create a calculation             |
-| `/calculations`      | GET    | List user calculations           |
-| `/calculations/{id}` | GET    | Get by ID                        |
-| `/calculations/{id}` | PUT    | Update inputs → recompute result |
-| `/calculations/{id}` | DELETE | Remove a calculation             |
-
----
-
-# **7. Testing Strategy (Unit + Integration + E2E)**
-
-Testing is a major grading requirement.
-The project includes:
-
-### ✔ Unit Tests
-
-* Test individual compute functions
-* Test factory behavior
-* Validate schemas
-
-### ✔ Integration Tests
-
-* Full DB interaction
-* Create/read/update/delete with real SQLAlchemy session
-* Token authentication tested
-
-### ✔ E2E Tests
-
-* Simulate full user flow
-* Register → Login → Create Calculation → Read → Update → Delete
-
-### **7.1 Database Override**
-
-Tests override the DB with a clean Postgres instance in GitHub Actions.
-
-```python
-def override_db():
-    engine = create_engine(settings.DATABASE_URL)
-    TestingSessionLocal = sessionmaker(bind=engine)
-    Base.metadata.create_all(bind=engine)
-    return TestingSessionLocal()
-```
-
----
-
-# **8. CI/CD Pipeline (GitHub Actions)**
-
-The pipeline automates:
-
-1. **Spinning up Postgres**
-2. **Installing dependencies**
-3. **Running tests**
-4. **Scanning Docker image for vulnerabilities**
-5. **Building Docker image**
-6. **Pushing to Docker Hub**
-
-### **8.1 Why a multi-stage pipeline?**
-
-* Ensures the code is correct before building images
-* Ensures image is secure before deployment
-* Matches real industry pipelines
-* Matches professor's rubric (test → security → deploy)
-
-### **8.2 Docker Build Step**
-
-```yaml
-docker build -t ${{ secrets.DOCKER_USERNAME }}/fastapi-calculator:latest .
-```
-
-### **8.3 Security Scanning**
-
-Using Trivy:
-
-```yaml
-uses: aquasecurity/trivy-action@master
-```
-
-This checks for HIGH & CRITICAL CVEs.
-
----
-
-# **9. Docker Deployment**
-
-### **9.1 Dockerfile**
-
-The Dockerfile uses:
-
-* python:3.11-slim
-* Poetry/pip install
-* Uvicorn worker process
-* Non-root execution
-
-### **9.2 docker-compose.yml**
-
-For local development:
-
-```yaml
-services:
-  db:
-    image: postgres:15
-  api:
-    build: .
-    depends_on:
-      - db
-```
-
-### **9.3 Why Docker?**
-
-* Reproducibility
-* Environment consistency
-* Smooth CI/CD
-* Matches real-world deployment practices
-
----
-
-# **10. Manual Testing Checklist**
-
-As required by professor:
-
-1. Register
-2. Login
-3. Authorize token in Swagger
-4. Create a calculation
-5. List calculations
-6. Get calculation by ID
-7. Update it
-8. Delete it
-
-All these steps have been successfully verified.
-
----
-
-# **11. Security**
-
-### ✔ Password hashing
-
-### ✔ JWT with expiration
-
-### ✔ CORS handling
-
-### ✔ DB-level cascading deletes
-
-### ✔ Minimal data returned from responses
-
----
-
-# **12. Reflection Summary (for final submission)**
-
-Throughout the project, I learned how a modern backend system is constructed from the ground up. Implementing polymorphism and the factory pattern helped me build a flexible model layer that can grow as new calculation types are added. Creating secure authentication reinforced my understanding of password hashing, JWTs, and dependency injection in FastAPI.
-
-Unit, integration, and E2E tests allowed me to verify correctness at every layer. The CI/CD pipeline gave me hands-on experience with automated testing, database initialization in GitHub Actions, Docker image building, and pushing to Docker Hub. This reflects real-world engineering workflows and strengthened my confidence in building production-ready APIs.
-
----
-
-# **13. How to Run the Application**
-
-### **Local (without Docker)**
-
-```
-uvicorn app.main:app --reload
-```
-
-### **Run Tests**
-
-```
-pytest
-```
-
-### **With Docker**
-
-```
+#### **3.2 Running Locally (Without Docker)**
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/<your-username>/fastapi-calculator.git
+    cd fastapi-calculator
+    ```
+2.  **Create virtual environment and install dependencies:**
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    ```
+3.  **Run the application:**
+    ```bash
+    uvicorn app.main:app --reload
+    ```
+
+#### **3.3 Running with Docker**
+
+For a quick deployment using the pre-built image:
+
+```bash
 docker pull <your-username>/fastapi-calculator:latest
 docker run -p 8000:8000 <your-username>/fastapi-calculator
 ```
 
+-----
+
+### **4. Configuration & Environment**
+
+#### **4.1 Environment Variables (`.env`)**
+
+Application configuration is handled via environment variables, read by **Pydantic Settings** (in `app/core/config.py`). This is **critical for CI/CD** and containerization.
+
+**Example `.env`:**
+
+```
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fastapi_db
+JWT_SECRET_KEY=super-secret-key
+JWT_REFRESH_SECRET_KEY=super-refresh-key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
+BCRYPT_ROUNDS=12
+```
+
+#### **4.2 Application Settings (`app/core/config.py`)**
+
+Configuration is completely decoupled from the source code, supporting `.env` files, GitHub Secrets, and Docker environment variables, ensuring industry-standard configuration management.
+
+```python
+class Settings(BaseSettings):
+    DATABASE_URL: str
+    JWT_SECRET_KEY: str
+    # ... other settings
+```
+
+-----
+
+### **5. Database Layer Design**
+
+The project uses **PostgreSQL** (with SQLAlchemy 2.0 Declarative Base) and employs key architectural decisions.
+
+#### **5.1 UUID Primary Keys**
+
+Both `User` and `Calculation` models use **UUID-based identifiers** (`String(36)` in Python, native UUID in Postgres). This prevents collisions and ensures predictability across environments.
+
+#### **5.2 Polymorphic Calculation Table**
+
+All calculation types (Addition, Subtraction, etc.) are stored in a **single table** using **SQLAlchemy Polymorphic Identity**.
+
+  * Allows for easy filtering and consistent schema.
+  * Enables child classes to override behavior (e.g., `get_result()`).
+
+-----
+
+### **6. Authentication & Security**
+
+The application implements robust **JWT-based authentication**.
+
+#### **6.1 Password Hashing**
+
+Passwords are securely stored using **bcrypt** via the Passlib library.
+
+```python
+def get_password_hash(password: str):
+    return pwd_context.hash(password)
+```
+
+#### **6.2 Token Creation & Validation**
+
+Access tokens encode the **user ID (`sub`)** and include an **expiration time**. A FastAPI dependency reads the token, validates the signature and format, and fetches the authenticated user.
+
+-----
+
+### **7. Polymorphic Calculation Implementation**
+
+This demonstrates advanced OOP and ORM usage, meeting the complexity requirements of the assignment.
+
+#### **7.1 Factory Pattern**
+
+Calculations are created via a single, flexible entry point that maps the calculation type string to the correct subclass:
+
+```python
+calc = Calculation.create("multiplication", user_id, inputs)
+
+# Internally, the factory uses a mapping:
+mapping = { "addition": Addition, "multiplication": Multiplication, ... }
+```
+
+#### **7.2 Overridden Behavior**
+
+Each concrete calculation class implements its specific logic by overriding the core `get_result()` method.
+
+```python
+class Multiplication(Calculation):
+    __mapper_args__ = {"polymorphic_identity": "multiplication"}
+
+    def get_result(self):
+        result = 1
+        for v in self.inputs:
+            result *= v
+        return float(result)
+```
+
+This design is **extensible** and aligns perfectly with a flexible, testable model layer.
+
+-----
+
+### **8. API Endpoints**
+
+#### **8.1 Authentication Endpoints**
+
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| `/auth/register` | `POST` | Create a new user account. |
+| `/auth/login` | `POST` | Authenticate and receive a JWT token. |
+
+#### **8.2 Calculations Endpoints (Require Auth)**
+
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| `/calculations` | `POST` | Create a new calculation (e.g., `{"type": "addition", "inputs": [1, 2]}`). |
+| `/calculations` | `GET` | List all calculations created by the current user. |
+| `/calculations/{id}` | `GET` | Retrieve a calculation by its UUID. |
+| `/calculations/{id}` | `PUT` | Update calculation inputs and recompute the result. |
+| `/calculations/{id}` | `DELETE` | Remove a calculation. |
+
+-----
+
+### **9. Testing Strategy (Unit, Integration, E2E)**
+
+A thorough testing strategy is a major grading requirement and is implemented to verify correctness at every layer.
+
+#### **9.1 Test Types**
+
+  * **Unit Tests:** Test individual components (e.g., compute functions, factory mapping, schema validation).
+  * **Integration Tests:** Test full DB interaction (CRUD operations) with a real SQLAlchemy session and token authentication.
+  * **E2E Tests:** Simulate complete user flows (Register → Login → CRUD).
+
+#### **9.2 Database Override (`conftest.py`)**
+
+The `conftest.py` file is crucial for enabling isolated, reliable tests. It overrides the `get_db` dependency to ensure that:
+
+  * Tests run against a clean, dedicated Postgres test instance (in CI) or SQLite (locally).
+  * Tables are created and dropped per test session (`Base.metadata.create_all`/`drop_all`).
+
+-----
+
+### **10. CI/CD Pipeline (GitHub Actions & Docker)**
+
+The automated pipeline reflects real-world engineering workflows.
+
+#### **10.1 Pipeline Stages**
+
+1.  **Setup:** Spin up a dedicated **Postgres 15** service.
+2.  **Testing:** Install dependencies and run the complete **Unit, Integration, and E2E** test suite (`pytest`).
+3.  **Security Scan:** Use **Trivy** to scan the Docker image for HIGH & CRITICAL CVEs.
+4.  **Deployment:** Build the **Docker image** and push it to **Docker Hub**.
+
+#### **10.2 Docker Deployment**
+
+  * **Dockerfile:** Uses `python:3.11-slim`, non-root execution, and Uvicorn workers.
+  * **`docker-compose.yml`:** Defines the multi-service local environment (`db: postgres:15`, `api: build .`).
+
+The use of Docker ensures **reproducibility** and **environment consistency** from development to CI/CD.
+
+-----
+
+### **11. Security & Quality Checklist**
+
+  * ✔ **Password hashing** (using **bcrypt**).
+  * ✔ **JWT** with expiration for authentication.
+  * ✔ **CORS** handling.
+  * ✔ **DB-level cascading deletes** for data integrity.
+  * ✔ Minimal data returned in API responses.
+
+-----
+
+### **12. Reflection Summary**
+
+This project was a deep dive into modern backend construction. Implementing **polymorphism** and the **factory pattern** provided a flexible and scalable model layer. Secure **JWT authentication** reinforced dependency injection and security practices. Finally, building the **CI/CD pipeline**—integrating automated testing, Docker, and security scanning—provided invaluable hands-on experience with production-ready engineering workflows.
+
+-----
+
+### **13. Manual Testing Checklist**
+
+All required manual steps have been verified:
+
+1.  Register a new user.
+2.  Log in and obtain a JWT token.
+3.  Authorize the token in Swagger UI.
+4.  `POST` to create a calculation.
+5.  `GET` to list calculations.
+6.  `GET` to retrieve by ID.
+7.  `PUT` to update inputs and recompute the result.
+8.  `DELETE` to remove the calculation.
+
 ---
-
-
